@@ -1,4 +1,5 @@
 import 'package:covid/Components/InfoCard.dart';
+import 'package:covid/Components/StatCard.dart';
 import 'package:covid/Config/Classes.dart';
 import 'package:covid/Config/Manager.dart';
 import 'package:flutter/material.dart';
@@ -11,11 +12,12 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   TabController _tabController;
   SortType _type = SortType.country;
-  int _index = 0;
+  int _index = 1;
+  String _last_updated = "";
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, initialIndex: 0, vsync: this);
+    _tabController = TabController(length: 3, initialIndex: 1, vsync: this);
     _tabController
         .addListener(() => setState(() => _index = _tabController.index));
   }
@@ -29,22 +31,36 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.grey[900],
         title: Text('Covid-19 Live Update'),
-        centerTitle: true,
         automaticallyImplyLeading: false,
-        leading: Container(),
+        centerTitle: true,
+        /*
+        actions: <Widget>[
+          Center(
+              child: Text(
+            _last_updated,
+            style: TextStyle(color: Colors.orange),
+          ))
+        ],
+        */
       ),
-      body: _index == 0 ? globalStream() : countryFuture(context),
+      body: _index == 0
+          ? countryStream()
+          : _index == 1 ? globalStream() : countryFuture(context),
       bottomNavigationBar: TabBar(
-          unselectedLabelColor: Colors.white,
+          unselectedLabelColor: Colors.grey[900],
           labelColor: Colors.red[700],
           indicatorColor: Colors.transparent,
           controller: _tabController,
           tabs: [
+            Tab(
+              text: "ALGERIA",
+              icon: Icon(Icons.star),
+            ),
             Tab(
               text: "GLOBAL",
               icon: Icon(Icons.home),
@@ -83,6 +99,11 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         ).asyncMap((i) => Manager.getGlobal()),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
+            DateTime last = DateTime.fromMicrosecondsSinceEpoch(
+                snapshot.data.timestamp * 1000);
+            String min =
+                last.minute <= 9 ? '0${last.minute}' : last.minute.toString();
+            _last_updated = "Last Update : ${last.hour}:$min";
             return Container(
               child: globalList(snapshot.data as Global),
             );
@@ -122,7 +143,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                   child: Text(
                     "Sort",
                     style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.grey[900],
                         fontFamily: "Proxima",
                         fontSize: 18),
                   ),
@@ -168,7 +189,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 backgroundColor: Colors.grey[400],
                 title: Text(
                   countries[index].country,
-                  style: TextStyle(color: Colors.white, fontFamily: "Proxima"),
+                  style: TextStyle(color: Colors.grey[900], fontFamily: "Proxima"),
                 ),
                 children: <Widget>[
                   Padding(
@@ -221,7 +242,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
           Text(
             e,
             style: TextStyle(
-                color: Colors.black, fontFamily: "Proxima", fontSize: 16),
+                color: Colors.black, fontFamily: "Proxima", fontSize: 16,),
           ),
           Text(
             data[e].toString(),
@@ -231,4 +252,73 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         ])));
     return rows;
   }
+
+  countryStream() => StreamBuilder(
+        stream: Stream.periodic(
+          Duration(seconds: 1),
+        ).asyncMap((i) => Manager.getCountry()),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Container(
+              child: getStatList(snapshot.data as Country),
+            );
+          } else {
+            if (snapshot.hasError)
+              return Container();
+            else
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    CircularProgressIndicator(
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.red[900]),
+                    ),
+                    SizedBox(height: 8),
+                    Text("Loading...", style: TextStyle(color: Colors.red[900]))
+                  ],
+                ),
+              );
+          }
+        },
+      );
+
+  getStatList(Country country) => GridView.count(
+        crossAxisCount: 2,
+        childAspectRatio: .91,
+        crossAxisSpacing: 2,
+        children: <Widget>[
+          Container(
+              child: StatCard(
+            header: "Cases",
+            stat: country.cases.toString(),
+            color: Colors.grey[400],
+          )),
+          StatCard(
+            header: "Today Cases",
+            stat: country.todayCases.toString(),
+            color: Colors.grey[400],
+          ),
+          StatCard(
+            header: "Deaths",
+            stat: country.deaths.toString(),
+            color: Colors.red[800],
+          ),
+          StatCard(
+            header: "Today Deaths",
+            stat: country.todayDeaths.toString(),
+            color: Colors.red[800],
+          ),
+          StatCard(
+            header: "Recovered",
+            stat: country.recovered.toString(),
+            color: Colors.green[400],
+          ),
+          StatCard(
+            header: "Critical",
+            stat: country.critical.toString(),
+            color: Colors.orange[500],
+          ),
+        ],
+      );
 }

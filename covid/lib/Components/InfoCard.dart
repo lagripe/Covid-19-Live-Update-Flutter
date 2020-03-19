@@ -11,7 +11,7 @@ class InfoCard extends StatelessWidget {
       child: Container(
         height: 200,
         child: Card(
-          color: Colors.grey[300],
+          color: Colors.grey[900],
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(30))),
           child: Column(
@@ -19,7 +19,7 @@ class InfoCard extends StatelessWidget {
             children: <Widget>[
               Text(
                 header,
-                style: TextStyle(fontSize: 50, fontFamily: "Proxima"),
+                style: TextStyle(fontSize: 50, fontFamily: "Proxima",color: Colors.white),
               ),
               SizedBox(height: 15),
               Text(stat,

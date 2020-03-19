@@ -12,7 +12,7 @@ class Manager {
           cases: response.data['cases'],
           deaths: response.data['deaths'],
           recovered: response.data['recovered'],
-          timestamp: response.data['timestamp']);
+          timestamp: response.data['updated']);
     } catch (e) {
       return Future.error("");
     }
@@ -34,6 +34,23 @@ class Manager {
               recovered: country['recovered'],
               critical: country['critical'])));
       return type == SortType.country ? countries : countries.reversed.toList();
+    } catch (e) {
+      return Future.error("");
+    }
+  }
+
+  static Future<Country> getCountry({String country = "algeria"}) async {
+    try {
+      var response = await Dio().get('$_COUNTRIES_ENDPOINT/$country');
+      print(response.statusCode);
+      return Country(
+          country: response.data['country'],
+          cases: response.data['cases'],
+          todayCases: response.data['todayCases'],
+          deaths: response.data['deaths'],
+          todayDeaths: response.data['todayDeaths'],
+          recovered: response.data['recovered'],
+          critical: response.data['critical']);
     } catch (e) {
       return Future.error("");
     }
